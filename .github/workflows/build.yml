@@ -1,30 +1,22 @@
-name: Compile APK
+name: Compile APK with Docker
 
 on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: kivy/buildozer:latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
+      - name: Build APK with Buildozer
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git openjdk-17-jdk python3-dev ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev zlib1g-dev libffi-dev libssl-dev
-          pip install --upgrade pip
-          pip install "cython<3.0" setuptools==65.5.0 buildozer
-
-      - name: Accept Android SDK Licenses and Build
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+          # Asegurar permisos correctos en el contenedor
+          chown -R user:user /github/workspace
+          cd /github/workspace
           buildozer -v android debug
 
       - name: Upload APK Artifact
