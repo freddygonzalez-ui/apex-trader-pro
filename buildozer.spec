@@ -38,6 +38,7 @@ android.minAPI = 21
 
 # (str) Android SDK version to use
 android.sdk = 33
+android.build_tools_version = 33.0.0
 
 [buildozer]
 
