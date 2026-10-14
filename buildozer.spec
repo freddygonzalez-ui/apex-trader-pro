@@ -31,14 +31,14 @@ fullscreen = 0
 android.permissions = INTERNET
 
 # (int) Target Android API, should be as high as possible.
-android.api = 33
+android.api = 34
 
 # (int) Minimum API your APK will support.
 android.minAPI = 21
 
 # (str) Android SDK version to use
-android.sdk = 33
-android.build_tools_version = 33.0.0
+android.sdk = 34
+android.build_tools_version = 34.0.0
 
 [buildozer]
 
