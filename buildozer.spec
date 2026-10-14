@@ -19,6 +19,7 @@ source.dir = .
 version = 1.0
 
 # (list) Application requirements
+# Limitado estrictamente para evitar sobrecarga de memoria
 requirements = python3,kivy,requests
 
 # (str) Supported orientations
@@ -31,18 +32,21 @@ fullscreen = 0
 android.permissions = INTERNET
 
 # (int) Target Android API, should be as high as possible.
-android.api = 34
+android.api = 33
 
 # (int) Minimum API your APK will support.
 android.minAPI = 21
 
-# (str) Android SDK version to use
-android.sdk = 34
-android.build_tools_version = 34.0.0
+# (int) Android SDK version to use
+android.sdk = 33
+
+# (str) Android build tools version to use
+android.build_tools_version = 33.0.0
+
 
 [buildozer]
 
-# (int) Log level (0 = error only, 1 = info, 2 = debug (with command output))
+# (int) Log level (0 = error only, 1 = info, 2 = debug (withcommand output))
 log_level = 1
 
 # (int) Display warning if buildozer is run as root (0 = False, 1 = True)
