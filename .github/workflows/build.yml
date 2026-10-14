@@ -17,7 +17,8 @@ jobs:
           pip install buildozer cython==0.29.33
       - name: Accept Android SDK Licenses and Build
         run: |
-          yes | sdkmanager --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          
           buildozer -v android debug
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
