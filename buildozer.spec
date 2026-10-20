@@ -19,7 +19,7 @@ source.dir = .
 version = 1.0
 
 # (list) Application requirements
-requirements = python3,kivy,requests,urllib3,idna,charset-normalizer,certifi,openssl
+requirements = python3,kivy,setuptools,requests,urllib3<2,idna,charset-normalizer,certifi,openssl
 
 # (str) Supported orientations
 orientation = portrait
