@@ -57,6 +57,8 @@ jobs:
       - name: Run Buildozer
         run: |
           buildozer -v android debug
+        env:
+          ANDROID_NDK_ROOT: ""
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
