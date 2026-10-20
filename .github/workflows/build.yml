@@ -40,6 +40,7 @@ jobs:
             libgstreamer1.0-dev \
             gstreamer1.0-plugins-base \
             gstreamer1.0-plugins-good \
+            liburiparser-dev \
             openjdk-17-jdk \
             unzip \
             zip \
