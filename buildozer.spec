@@ -19,8 +19,8 @@ source.dir = .
 version = 1.0
 
 # (list) Application requirements
-# Limitado estrictamente para evitar sobrecarga de memoria
-requirements = python3,kivy,requests
+# Añadidos certifi, urllib3, idna, charset-normalizer y openssl/openssl ya que 'requests' los requiere obligatoriamente para funcionar en Android.
+requirements = python3,kivy,requests,urllib3,idna,charset-normalizer,certifi,openssl
 
 # (str) Supported orientations
 orientation = portrait
@@ -31,12 +31,17 @@ fullscreen = 0
 # (list) Permissions
 android.permissions = INTERNET
 
+# (str) Supported orientations (optional but good to specify)
+# Android explicit API and SDK configurations to prevent build crashes
+android.api = 33
+android.minapi = 21
+android.ndk = 25b
+android.accept_sdk_license = True
+
 [buildozer]
 
 # (int) Log level (0 = error only, 1 = info, 2 = debug (withcommand output))
-log_level = 1
+log_level = 2
 
 # (int) Display warning if buildozer is run as root (0 = False, 1 = True)
 warn_on_root = 1
-
-
