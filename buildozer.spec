@@ -12,6 +12,9 @@ package.domain = org.apextrader
 # (list) Source files to include (let it empty to include all the files)
 source.include_exts = py,png
 
+# (str) Icon of the application
+icon.filename = %(source.dir)s/logo.png
+
 # (list) Directory to load source from
 source.dir = .
 
