@@ -15,9 +15,14 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Install System Dependencies
         run: |
-          sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
@@ -32,21 +37,26 @@ jobs:
             libavformat-dev \
             libavcodec-dev \
             zlib1g-dev \
-            openjdk-17-jdk \
             unzip \
             zip \
             autoconf \
             libtool \
-            pkg-config
+            pkg-config \
+            libffi-dev \
+            libssl-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libreadline-dev \
+            libsqlite3-dev
 
       - name: Install Buildozer and Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --upgrade cython==0.29.36 buildozer pbxproj
+          pip install cython==0.29.36 buildozer pbxproj
 
       - name: Run Buildozer
         run: |
-          yes | buildozer -v android debug
+          buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
