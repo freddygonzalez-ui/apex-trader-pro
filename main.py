@@ -136,12 +136,10 @@ class ApexTraderApp(App):
     def build(self):
         root_layout = FloatLayout()
         
-        # Búsqueda y validación del logo (soporta .png o .jpg)
         ruta_logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logo.png')
         if not os.path.exists(ruta_logo):
             ruta_logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logo.jpg')
             
-        # 1. Logo como marca de agua en el fondo (PROPORCIONAL)
         if os.path.exists(ruta_logo):
             bg_logo = Image(
                 source=ruta_logo,
@@ -149,7 +147,7 @@ class ApexTraderApp(App):
                 pos_hint={'center_x': 0.5, 'center_y': 0.5},
                 opacity=0.10,
                 allow_stretch=True,
-                keep_ratio=True  # Mantiene la proporción sin deformar
+                keep_ratio=True
             )
             root_layout.add_widget(bg_logo)
             
@@ -162,7 +160,6 @@ class ApexTraderApp(App):
         )
         controls_layout.bind(minimum_height=controls_layout.setter('height'))
 
-        # 2. Cabecera con Logo más grande al lado del Título
         header_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height=dp(48), spacing=dp(10))
         
         if os.path.exists(ruta_logo):
@@ -176,7 +173,7 @@ class ApexTraderApp(App):
             header_layout.add_widget(logo_header)
 
         titulo = Label(
-            text="[b]APEX TRADER PRO[/b]\n[size=12sp](Multi-Operación)[/size]", 
+            text="[b]APEX TRADER PRO[/b]\n[size=12sp](Cálculos de Salida Corregidos)[/size]", 
             markup=True, 
             font_size=sp(16), 
             halign='left',
@@ -295,7 +292,6 @@ class ApexTraderApp(App):
         controls_layout.add_widget(row_acciones)
         content_layout.add_widget(controls_layout)
         
-        # --- SECCIÓN INFERIOR SCROLLABLE ---
         scroll_resultado = ScrollView(size_hint=(1, 1))
         
         self.resultado_label = Label(
@@ -317,13 +313,14 @@ class ApexTraderApp(App):
         content_layout.add_widget(scroll_resultado)
         root_layout.add_widget(content_layout)
         
-        # Variables de estado (Multi-operación)
         self.saldo_ficticio = 1000.0
         self.operaciones_activas = []
         self.analizando_activo = False
         self.precio_actual_cache = 0.0
         self.atr_cache = 0.0
         self.sim_simbolo = ""
+        self.precio_entrada_optimo_cache = 0.0
+        self.precio_salida_optimo_cache = 0.0
         
         return root_layout
 
@@ -432,15 +429,24 @@ class ApexTraderApp(App):
                 color_sug = "ffb703"
                 habilitar_botones = False
                 
+                precio_entrada_optimo = precio_actual
+                precio_salida_optimo = precio_actual
+                
                 if not mercado_en_rango:
                     if puntos_long >= 75 and tendencia_macro_1d and tendencia_media_4h:
                         sugerencia = f"COMPRAR (LONG) [Confianza: {puntos_long}% | ADX: {adx_1h:.1f}]"
                         color_sug = "00d26a"
                         habilitar_botones = True
+                        # En LONG: Entrada buscando pullback (menor) y Take Profit (mayor)
+                        precio_entrada_optimo = precio_actual - (atr_1h * 0.3)
+                        precio_salida_optimo = precio_entrada_optimo + (atr_1h * 4.0)
                     elif puntos_short >= 75 and not tendencia_macro_1d and not tendencia_media_4h:
                         sugerencia = f"VENDER (SHORT) [Confianza: {puntos_short}% | ADX: {adx_1h:.1f}]"
                         color_sug = "ff4d4d"
                         habilitar_botones = True
+                        # En SHORT: Entrada buscando rebote (mayor) y Take Profit (menor)
+                        precio_entrada_optimo = precio_actual + (atr_1h * 0.3)
+                        precio_salida_optimo = precio_entrada_optimo - (atr_1h * 4.0)
                     else:
                         sugerencia = f"ESPERAR (Confluencia Insuficiente | ADX: {adx_1h:.1f})"
                 else:
@@ -453,12 +459,23 @@ class ApexTraderApp(App):
                 self.precio_actual_cache = precio_actual
                 self.sim_simbolo = simbolo
                 self.atr_cache = atr_1h
+                self.precio_entrada_optimo_cache = precio_entrada_optimo
+                self.precio_salida_optimo_cache = precio_salida_optimo
                 
                 def actualizar_ui_callback(dt):
+                    texto_extra = ""
+                    if habilitar_botones:
+                        texto_extra = (
+                            f"\n[b]🎯 ZONAS ÓPTIMAS SUGERIDAS:[/b]\n"
+                            f"• Entrada Sugerida (Limit): [color=00d26a]${precio_entrada_optimo:,.4f}[/color]\n"
+                            f"• Cierre Óptimo (Take Profit): [color=15d2ff]${precio_salida_optimo:,.4f}[/color]\n"
+                        )
+
                     self.resultado_label.text = (
-                        f"[b]{simbolo}[/b] | Precio Vivo: ${precio_actual:,.4f}\n"
+                        f"[b]{simbolo}[/b] | Precio Mercado: ${precio_actual:,.4f}\n"
                         f"RSI: {rsi_1h:.1f} | ADX: {adx_1h:.1f}\n"
-                        f"Estado: [color={color_sug}][b]{sugerencia}[/b][/color]\n"
+                        f"Estado: [color={color_sug}][b]{sugerencia}[/b][/color]"
+                        f"{texto_extra}\n"
                         f"Comisión Est.: ${comision_est:,.2f} USDT\n"
                         f"Operaciones Activas: {len(self.operaciones_activas)}/2"
                     )
@@ -501,21 +518,22 @@ class ApexTraderApp(App):
         comision_total = (tamano_bruto * tasa_comision_pct) * 2
 
         distancia_sl = self.atr_cache * 2.0
-        distancia_tp = self.atr_cache * 5.0
         
+        # Sincronización estricta de Stop Loss y Take Profit
         if decision == "LONG":
             sl = self.precio_actual_cache - distancia_sl
-            tp = self.precio_actual_cache + distancia_tp
+            tp = self.precio_actual_cache + (self.atr_cache * 4.0)
             liq = self.precio_actual_cache * (1 - (0.9 / apalancamiento))
         else:
             sl = self.precio_actual_cache + distancia_sl
-            tp = self.precio_actual_cache - distancia_tp
+            tp = self.precio_actual_cache - (self.atr_cache * 4.0)
             liq = self.precio_actual_cache * (1 + (0.9 / apalancamiento))
 
         nueva_op = {
             "simbolo": self.sim_simbolo,
             "decision": decision,
             "entrada": self.precio_actual_cache,
+            "salida_optima": tp,
             "margen": margen_bruto,
             "apalancamiento": apalancamiento,
             "unidades": unidades,
@@ -588,7 +606,8 @@ class ApexTraderApp(App):
                         color_pnl = "00d26a" if o.get('pnl_actual', 0) >= 0 else "ff4d4d"
                         texto_ops += (
                             f"--- Posición {idx+1}: {o['simbolo']} ({o['decision']}) ---\n"
-                            f"Entrada: ${o['entrada']:,.4f} | Vivo: ${o.get('precio_vivo', 0):,.4f}\n"
+                            f"Entrada Mercado: ${o['entrada']:,.4f} | Vivo: ${o.get('precio_vivo', 0):,.4f}\n"
+                            f"🎯 Cierre Óptimo (TP): ${o['salida_optima']:,.4f}\n"
                             f"SL: ${o['stop_loss']:,.4f} | TP: ${o['take_profit']:,.4f}\n"
                             f"PnL Neto: [color={color_pnl}]${o.get('pnl_actual', 0):,.2f} USDT[/color]\n\n"
                         )
